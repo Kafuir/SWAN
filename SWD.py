@@ -22,7 +22,7 @@ if SR == '':
 if not ann.swd(SR): #TODO: replace with Exceptions
     if not MESD.calculate_ME_SD(SR):
         if not density.extract_stats():            
-            input('All steps passed succesfully!\n')
+            print('All steps passed succesfully!\n')
         else:   
             input('Failed to extract information to CSV!\n')
     else:   
