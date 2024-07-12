@@ -48,7 +48,7 @@ def make_spectrogram(signal, size):
     spectrogram = tfio.audio.spectrogram(processed_signal,nfft=frame_length, window=frame_length, stride=frame_step)
     return spectrogram.numpy()[:,:65]
 
-def swd(SR):
+def swd(key):
     print ('Attempting to find SWDs in EDF files...')
     if not os.path.exists(os.getcwd() + '/results/'):
         os.makedirs(os.getcwd() + '/results/')
@@ -68,11 +68,9 @@ def swd(SR):
         start_time = pyedflib.highlevel.read_edf_header(filename)['startdate'] #01
         signal = np.array(eeg).astype(float)
         swd_len = 0
-        certainty = 0
+        certainty = 0 
 
-        #print(np.round(signal.shape[0]/SR/3600, 3), 'hrs') #version03 
-
-        if len(signal) > SR*3600*threshold: #completely arbitrary threshold of 12 hours
+        if len(signal) > key['SR']*3600*threshold: #completely arbitrary threshold of 12 hours
             signal_parted = [signal[:len(signal)//2], signal[len(signal)//2:]]
             print ('The original recording is too long to proceed safely, dividing it in two...')
         else:
@@ -94,11 +92,11 @@ def swd(SR):
             print('Spec length: ', num_frames)
             print(spectrogram.shape)
 
-            carrot_size = num_frames // round(len(processed_signal)//SR)
+            carrot_size = num_frames // round(len(processed_signal)//key['SR'])
             image_chunks = chunks(spectrogram, carrot_size)
             vmin = 0
             vmax = 32
-            EOF = cool_name(len(processed_signal)/SR) ##version03\
+            EOF = cool_name(len(processed_signal)/key['SR']) ##version03\
             print('Len of part: ', EOF)
             
 
@@ -146,4 +144,4 @@ def swd(SR):
     return 0
 
 if __name__ == '__main__':
-    swd(400)
+    swd({'SR': 400})

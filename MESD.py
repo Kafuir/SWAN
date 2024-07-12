@@ -21,7 +21,7 @@ def time_to_secs(time, SR):
     parts = time.split(':')
     return (int(parts[0])*3600 + int(parts[1])*60 + int(parts[2])) * SR
 
-def calculate_ME_SD(SR): 
+def calculate_ME_SD(key): 
     if not os.path.exists(os.getcwd() + '/results/MESD/'):
         os.makedirs(os.getcwd() + '/results/MESD/')
     stdevs = []
@@ -38,8 +38,8 @@ def calculate_ME_SD(SR):
                 for line in file:
                     parts = line.split()
                     if parts[2] != 'at':
-                        time1 = time_to_secs(parts[2], SR)
-                        time2 = time_to_secs(parts[4], SR)
+                        time1 = time_to_secs(parts[2], key['SR'])
+                        time2 = time_to_secs(parts[4], key['SR'])
                         (line, stdev, mean) = extract_from_chunk(eeg[time1:time2], parts[2], parts[4], parts[-1])
                         if stdev >= 0.2 and stdev < 0.45:
                             file_out.write(line + '\n')
@@ -56,7 +56,7 @@ def calculate_ME_SD(SR):
     return 0
 
 if __name__ == "__main__":
-    calculate_ME_SD(400)
+    calculate_ME_SD({'SR': 400})
     
 ##stats1 = (f'STDEV:\n68%: {st.t.interval(0.68, len(stdevs)-1, loc=np.mean(stdevs), scale=st.sem(stdevs))}\n 90%: {st.t.interval(0.90, len(stdevs)-1, loc=np.mean(stdevs), scale=st.sem(stdevs))}\n 99.7%: {st.t.interval(0.997, len(stdevs)-1, loc=np.mean(stdevs), scale=st.sem(stdevs))}')
 ##stats2 = (f'MEAN:\n68%: {st.t.interval(0.68, len(means)-1, loc=np.mean(means), scale=st.sem(means))}\n 90%: {st.t.interval(0.90, len(means)-1, loc=np.mean(means), scale=st.sem(means))}\n 99.7%: {st.t.interval(0.997, len(means)-1, loc=np.mean(means), scale=st.sem(means))}')

@@ -19,10 +19,12 @@ SR = input ('The program will attempt to parse all files in EDF folder. Enter Sa
 if SR == '':
     SR = 400
 
-if not ann.swd(SR): #TODO: replace with Exceptions
-    if not MESD.calculate_ME_SD(SR):
+key = {'bin': 'half', 'SR': SR}
+
+if not ann.swd(key): #TODO: replace with Exceptions
+    if not MESD.calculate_ME_SD(key):
         if not density.extract_stats():            
-            input('All steps passed succesfully!\n')
+            print('All steps passed succesfully!\n')
         else:   
             input('Failed to extract information to CSV!\n')
     else:   
