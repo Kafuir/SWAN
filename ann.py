@@ -23,10 +23,6 @@ def cool_name(image_name):
     m = int(image_name)#get_number(image_name)
     return f'{fancy(m//3600)}:{fancy((m%3600)//60)}:{fancy(m%3600%60)}'
 
-def guess_swds_pics(folder):
-    image_path = os.getcwd() + folder
-    print (image_path)
-
 def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
@@ -48,13 +44,19 @@ def make_spectrogram(signal, size):
     spectrogram = tfio.audio.spectrogram(processed_signal,nfft=frame_length, window=frame_length, stride=frame_step)
     return spectrogram.numpy()[:,:65]
 
-def swd(SR):
+def swd(key):
     print ('Attempting to find SWDs in EDF files...')
     if not os.path.exists(os.getcwd() + '/results/'):
         os.makedirs(os.getcwd() + '/results/')
 
     #HERE BE SETTINGS
-    model = tf.keras.models.load_model('model_short.keras', compile = False)
+    if key['Model'] == 'compact':
+        model = tf.keras.models.load_model('model-compact02.keras', compile = False)
+    elif key['Model'] == 'short':
+        model = tf.keras.models.load_model('model_short.keras', compile = False)
+    else:
+        print('Model not found')
+        return 1
     size = 2
     threshold = 120 #5 days for memes; USED TO PREVENT HUNGRY SNAKE FROM EATING ALL YOUR MEMORY
 
@@ -64,15 +66,13 @@ def swd(SR):
         count += 1
         print (f'\n----------\n{count}/{len(filelist)}')
         print (filename)
-        eeg = pyedflib.highlevel.read_edf(filename, ch_nrs = 0)[0][0]
+        eeg = pyedflib.highlevel.read_edf(filename, ch_nrs = 0)[0][key['Channel']]
         start_time = pyedflib.highlevel.read_edf_header(filename)['startdate'] #01
         signal = np.array(eeg).astype(float)
         swd_len = 0
-        certainty = 0
+        certainty = 0 
 
-        #print(np.round(signal.shape[0]/SR/3600, 3), 'hrs') #version03 
-
-        if len(signal) > SR*3600*threshold: #completely arbitrary threshold of 12 hours
+        if len(signal) > key['SR']*3600*threshold: #completely arbitrary threshold of 12 hours
             signal_parted = [signal[:len(signal)//2], signal[len(signal)//2:]]
             print ('The original recording is too long to proceed safely, dividing it in two...')
         else:
@@ -91,15 +91,15 @@ def swd(SR):
 
             frame_step = size*8
             num_frames = -(-len(processed_signal) // frame_step)
-            print('Spec length: ', num_frames)
-            print(spectrogram.shape)
+            #***#print('Spec length: ', num_frames)
+            #***#print(spectrogram.shape)
 
-            carrot_size = num_frames // round(len(processed_signal)//SR)
+            carrot_size = num_frames // round(len(processed_signal)//key['SR'])
             image_chunks = chunks(spectrogram, carrot_size)
             vmin = 0
             vmax = 32
-            EOF = cool_name(len(processed_signal)/SR) ##version03\
-            print('Len of part: ', EOF)
+            EOF = cool_name(len(processed_signal)/key['SR']) ##version03\
+            #***#print('Len of part: ', EOF)
             
 
             for x in image_chunks:
@@ -134,16 +134,16 @@ def swd(SR):
                     if swd_len > 2 and not_len > 1: #to check if it is a hole
                         if (round(certainty / swd_len)) > 2: #seems that such swds with cert less than 3 are mostly not swds ##version03
                             file_out.write(f'SWD status: {cool_name(start_time-1)} - {cool_name(oldname)}, certainty: {round(certainty / swd_len)}\n')
-                            print (f'SWD status: {cool_name(start_time-1)} - {cool_name(oldname)}, certainty: {round(certainty / swd_len)}')
+                            #***#print (f'SWD status: {cool_name(start_time-1)} - {cool_name(oldname)}, certainty: {round(certainty / swd_len)}')
                         certainty = 0
                         not_len = 0
                         swd_len = 0
             if swd_len > 0 and (round(certainty / swd_len)) > 2:
-                print (f'SWD status: {cool_name(start_time-1)} - {EOF}, certainty: {round(certainty / swd_len)}')
+                #***#print (f'SWD status: {cool_name(start_time-1)} - {EOF}, certainty: {round(certainty / swd_len)}')
                 file_out.write(f'SWD status: {cool_name(start_time-1)} - {EOF}, certainty: {round(certainty / swd_len)}\n')
         file_out.close()
     print('SWD parsing Done!')
     return 0
 
 if __name__ == '__main__':
-    swd(400)
+    swd({'SR': 400, 'Channel': 0})
