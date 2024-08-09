@@ -146,4 +146,4 @@ def swd(key):
     return 0
 
 if __name__ == '__main__':
-    swd({'SR': 400, 'Channel': 0})
+    swd({'SR': 400, 'Channel': 0, 'Model': 'short'})
