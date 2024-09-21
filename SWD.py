@@ -43,8 +43,14 @@ def launch(key):
             except Exception as e:
                 print(f"Statistical data and Excel file formation failed: {e}")
                 return 0
-                
-    rename_folder_to_unique(os.getcwd() + '/results/', "result")
+    if key['Sleep']:
+        import sleep
+        print('Moving to sleep markdown...')
+        sleep.sleep_mark_everyone()  
+    if key['Rename']:            
+        rename_folder_to_unique(os.getcwd() + '/results/', "result")
+    else:
+        print('Results were saved in results folder')
     return 0
 
 if __name__ == '__main__':

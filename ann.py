@@ -66,7 +66,7 @@ def swd(key):
         count += 1
         print (f'\n----------\n{count}/{len(filelist)}')
         print (filename)
-        eeg = pyedflib.highlevel.read_edf(filename, ch_nrs = 0)[0][key['Channel']]
+        eeg = pyedflib.highlevel.read_edf(filename, ch_nrs = key['Channel'])[0][0]
         start_time = pyedflib.highlevel.read_edf_header(filename)['startdate'] #01
         signal = np.array(eeg).astype(float)
         swd_len = 0

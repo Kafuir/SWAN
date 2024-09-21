@@ -33,7 +33,7 @@ def calculate_ME_SD(key):
         if '.txt' in filename:
             print('Found a file, ', filename)
             with open(os.getcwd() + '/results/' + filename) as file:
-                eeg = pyedflib.highlevel.read_edf(os.getcwd() + '/EDF/' + filename[:-3] + 'edf', ch_nrs = 0)[0][key['Channel']]
+                eeg = pyedflib.highlevel.read_edf(os.getcwd() + '/EDF/' + filename[:-3] + 'edf', ch_nrs = key['Channel'])[0][0]
                 file_out = open(os.getcwd() + '/results/MESD/' + os.path.basename(filename[:-4]) + '_MESD.txt', 'w')
                 filtered = 0
                 passed = 0
