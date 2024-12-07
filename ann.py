@@ -28,13 +28,12 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 def find_all_files(what):
-    result = []
-    for i in os.walk(os.getcwd()):
-        for x in i[2]:
-            if what in x: 
-                result.append(i[0] + '/' + x)
-    print (f'Found {len(result)} files')
-    return result
+    files = []
+    for file in os.listdir("EDF/"):
+        if file.endswith(".edf"):
+            files.append('EDF/' + file)
+    print (f'Found {len(files)} files')
+    return files
 
 
 @tf.function(reduce_retracing=True) #this is old but seem to work
@@ -132,7 +131,7 @@ def swd(key):
                         swd_len = 0
                     #print (not_len, swd_len)
                     if swd_len > 2 and not_len > 1: #to check if it is a hole
-                        if (round(certainty / swd_len)) > 2: #seems that such swds with cert less than 3 are mostly not swds ##version03
+                        if (round(certainty / swd_len)) > 0: #seems that such swds with cert less than 3 are mostly not swds ##version03
                             file_out.write(f'SWD status: {cool_name(start_time-1)} - {cool_name(oldname)}, certainty: {round(certainty / swd_len)}\n')
                             #***#print (f'SWD status: {cool_name(start_time-1)} - {cool_name(oldname)}, certainty: {round(certainty / swd_len)}')
                         certainty = 0

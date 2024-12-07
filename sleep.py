@@ -3,13 +3,15 @@ import matplotlib.pyplot as plt
 import tensorflow as tf  # эта библиотека нужна для обучения и проверки сети
 from tensorflow.keras import datasets, layers, models
 import pyedflib
-import mne
+#import mne
 import os
 import re
 import pandas as pd
 from pandas import DataFrame
 from read_input_data import ANN_examples_3channels_markup # Это нужно для корректного считывания файлов по 3-ем каналам
 from read_input_data import ANN_examples_2channels_markup # Это нужно для корректного считывания файлов по 3-ем каналам
+import statistics
+from scipy.signal import butter, lfilter
 
 #--------------
 # Some funny little buggers by L.
@@ -41,6 +43,31 @@ def logistic(x):
     else:
         return e#round(x, 2)
 
+def butter_bandpass(lowcut, highcut, fs, order=5):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    b, a = butter(order, [low, high], btype='band')
+    return b, a
+
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+    y = lfilter(b, a, data)
+    return y
+
+def extract_stuff(signal, sample_rate):
+    #print(signal)
+    result = []
+    for x in range(1,4):
+        signal_filt = butter_bandpass_filter(signal[:,x], 0.5, 50, sample_rate)
+        #print (len(signal[:,x]))
+        freq_spectrum = np.fft.fft(signal_filt)
+        freqs = np.fft.fftfreq(len(signal_filt), d=1/sample_rate)
+        #print (freq_spectrum)
+        result.append(round(statistics.stdev(signal_filt), 3)) #stdev
+        result.append(round(abs(freqs[np.argmax(np.abs(freq_spectrum[1:]))]), 2)) #freq
+    return result
+
 def magic2(a):
     return logistic(a[0]*(-0.1037)+a[1]*3.591+a[2]*(-0.842)+a[3]*6.288+a[4]*(-1.242)+a[5]*(-2.783)-2.67012)
 
@@ -52,6 +79,7 @@ def find_sleep(edf_file, filt = True):
 
     dt_average_s=1         # сдвиг окна усреднения в секундах
     window_average_s=10    # размер окна усреднения в секундах
+    extra_metrics = True
     if filt:
         min_sleep_len = 16#минимальная продолжительность сна (в секундах)
         len_thresh = 80#нижний порог интервала между двумя событиями (в секундах)
@@ -69,13 +97,14 @@ def find_sleep(edf_file, filt = True):
     n = f.signals_in_file
     T0=f.getStartdatetime()
     sT0 = time_to_secs_local(re.search(r'\d+:\d{2}:\d{2}', str(T0))[0])
+    sT0 = 0 #COMMENT ME TO ENABLE ASTRONOMY TIME
     freq = int(f.getSampleFrequency(0))
     #print(sT0, freq)
     #print("Frequency = ",freq," Hz")
     f_len = np.size(f.readSignal(0),0) # Число точек в каждом канале
     #print(str(f_len) + " points")
     imported_data = np.zeros((f_len,4))
-    use_corrected_data = True #True = будет использован сглаженный сигнал, где значения >0.2 и <-0.2 заменены на 0,2 и -0,2 соответсвенно
+    use_corrected_data = False #True = будет использован сглаженный сигнал, где значения >0.2 и <-0.2 заменены на 0,2 и -0,2 соответсвенно
                             #а так же band-path фильтрация в диапазоне 0,5-100Hz
 
 
@@ -92,13 +121,13 @@ def find_sleep(edf_file, filt = True):
     file_markup = None
 
 
-    if use_corrected_data:
-        info = mne.create_info(signal_labels, freq, ch_types='eeg')
-        corrected_data = np.where(imported_data[:,1:]>0.2, 0.2,imported_data[:,1:])
-        corrected_data = np.where(corrected_data<-0.2, -0.2,corrected_data)
-        corrected_data = (mne.io.RawArray(corrected_data.T, info, verbose = False).filter(0.5,100, phase='zero-double', verbose = False)).get_data(picks='eeg')
+    #if use_corrected_data:
+    #    info = mne.create_info(signal_labels, freq, ch_types='eeg')
+    #    corrected_data = np.where(imported_data[:,1:]>0.2, 0.2,imported_data[:,1:])
+    #    corrected_data = np.where(corrected_data<-0.2, -0.2,corrected_data)
+    #    corrected_data = (mne.io.RawArray(corrected_data.T, info, verbose = False).filter(0.5,100, phase='zero-double', verbose = False)).get_data(picks='eeg')
 
-        imported_data = np.concatenate((imported_data[:,0][None].T, corrected_data.T),1)
+    #    imported_data = np.concatenate((imported_data[:,0][None].T, corrected_data.T),1)
 
 
 
@@ -124,6 +153,12 @@ def find_sleep(edf_file, filt = True):
     points = []
     intervals_s = []
     intervals_e = []
+    SD1 = []
+    rt1 = []
+    SD2 = []
+    rt2 = []
+    SD3 = []
+    rt3 = []
 
     for i in range(1, total.shape[0]):
         if (total[i,1] != total[i-1,1] and total[i,1]==1) or \
@@ -149,6 +184,15 @@ def find_sleep(edf_file, filt = True):
             events = np.concatenate((events, event),0)
             intervals_s.append(cool_name(points[i]+sT0))
             intervals_e.append(cool_name(points[i+1]+sT0))
+            #print(freq, points[i])
+            [S1, r1, S2, r2, S3, r3] = extract_stuff(imported_data[int(points[i]*freq):int(points[i+1]*freq)], freq)
+            
+            SD1.append(S1)
+            rt1.append(r1)
+            SD2.append(S2)
+            rt2.append(r2)
+            SD3.append(S3)
+            rt3.append(r3)
 
     #with open('results/' + edf_file[4:] + '_intervals.txt', 'w') as file:
     #    for i in intervals:
@@ -156,9 +200,9 @@ def find_sleep(edf_file, filt = True):
     #        file.write('\n')
     #    file.close()
     #print(intervals)
-    df = DataFrame({'Start': intervals_s, 'End': intervals_e})
-    out_name = 'results/' + edf_file[4:-4] + '.xlsx'# + '_warning.txt'
-    out_name_warn = 'results/' + edf_file[4:-4] + '_warning.xlsx'
+    df = DataFrame({'Start': intervals_s, 'End': intervals_e, 'Ch1 SD': SD1, 'Ch1 FR': rt1, 'Ch2 SD': SD2, 'Ch2 FR': rt2, 'Ch3 SD': SD3, 'Ch3 FR': rt3})
+    out_name = 'results/' + edf_file[4:] + '.xlsx'# + '_warning.txt'
+    out_name_warn = 'results/' + edf_file[4:] + '_warning.xlsx'
     excel_mode = 'a'
     if not os.path.exists(out_name): #Check if there is a file to write to; adding a sheet if there is, making a new one if there isn't
         if not os.path.exists(out_name_warn):

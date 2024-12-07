@@ -9,11 +9,11 @@ import numpy as np
 
 def extract_from_chunk (chunk, hour1, hour2, sev):
     stdev = round(statistics.stdev(chunk), 3)
-    mean = round(statistics.mean(chunk), 3)
-    amp = round(chunk.max()-chunk.min(), 3)
+    #mean = round(statistics.mean(chunk), 3)
+    #amp = round(chunk.max()-chunk.min(), 3)
     filtered = [num for num in chunk if abs(num) > 1.5]
-    hal = round(len(filtered) / len(chunk), 4)*100
-    return (f'{hour1}-{hour2[:-1]} SD {stdev} CERT {sev}', stdev, mean)# Cool Metric {int(sev)/stdev}')#{amp} high and lows percentage')
+    #hal = round(len(filtered) / len(chunk), 4)*100
+    return (f'{hour1}-{hour2[:-1]} SD {stdev} CERT {sev}', stdev)# Cool Metric {int(sev)/stdev}')#{amp} high and lows percentage')
 
 def time_to_secs(time, SR):
     if ',' in time:
@@ -42,8 +42,8 @@ def calculate_ME_SD(key):
                     if parts[2] != 'at':
                         time1 = time_to_secs(parts[2], key['SR'])
                         time2 = time_to_secs(parts[4], key['SR'])
-                        (line, stdev, mean) = extract_from_chunk(eeg[time1:time2], parts[2], parts[4], parts[-1])
-                        if stdev >= 0.2 and stdev < 0.45:
+                        (line, stdev) = extract_from_chunk(eeg[time1:time2], parts[2], parts[4], parts[-1])
+                        if stdev >= 0.0 and stdev < 0.45:
                             file_out.write(line + '\n')
                             #***#print (line)
                             passed += 1

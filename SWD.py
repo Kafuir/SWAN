@@ -46,7 +46,12 @@ def launch(key):
     if key['Sleep']:
         import sleep
         print('Moving to sleep markdown...')
-        sleep.sleep_mark_everyone()  
+        sleep.sleep_mark_everyone()
+    if key['Marker']:
+        import add_markers
+        print('Moving to EDF markers...')
+        add_markers.mark_files()
+        
     if key['Rename']:            
         rename_folder_to_unique(os.getcwd() + '/results/', "result")
     else:
@@ -54,7 +59,7 @@ def launch(key):
     return 0
 
 if __name__ == '__main__':
-    key = {'Bins': 'half', 'SR': 400, 'verbose': 3, 'Model': 'short', 'Channel': 0}
+    key = {'Bins': 'half', 'SR': 400, 'verbose': 3, 'Model': 'short', 'Channel': 0, 'Rename': 1, 'Sleep': 0,  'Astronomical': 0, 'Marker': 1}
     SR = input ('The program will attempt to parse all files in EDF folder. Enter Sampling Rate (or press enter to use 400)\n')
     if SR != '':
         key['SR'] = SR

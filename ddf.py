@@ -47,7 +47,7 @@ class TestReportGUI:
         self.options = [["Model", ['Default', 'Compact (experimental)']], ["Bins", ['30 mins', '1 hour']]]
         self.numbers = ['SR', 'Channel']
         #self.options = [["No Data", "Passed", "Failed"]
-        self.dictopt = {'Bins': 'half', 'SR': 400, 'verbose': 3, 'Model': 'short', 'Channel': 0, 'Rename': 1, 'Sleep': 0}
+        self.dictopt = {'Bins': 'half', 'SR': 400, 'verbose': 3, 'Model': 'short', 'Channel': 0, 'Rename': 1, 'Sleep': 0, 'Astronomical': 0, 'Marker': 1}
         self.create_widgets()
         
     def create_widgets(self):
@@ -73,7 +73,9 @@ class TestReportGUI:
             #HERE BE DRAGONS entry.bind("<<ComboboxSelected>>", lambda event, option=option, var=var: self.update_options(option[0], var))
 
         rename = tk.IntVar()  
-        sleep = tk.IntVar() 
+        sleep = tk.IntVar()
+        astro = tk.IntVar()  
+        marker = tk.IntVar() 
         rename.set(1) 
         checkbutton1 = tk.Checkbutton(self.root, text="Rename folder", variable=rename, bg="white", onvalue = 1, offvalue = 0)
         checkbutton1.grid(row=len(self.options)+n+1, column=3)
@@ -81,6 +83,12 @@ class TestReportGUI:
         checkbutton2 = tk.Checkbutton(self.root, text="Mark down sleep", variable=sleep, bg="white", onvalue = 1, offvalue = 0)
         checkbutton2.grid(row=len(self.options)+n+2, column=3)
         checkbutton2.bind("<Button-1>", lambda event, number='Sleep', var=sleep: self.update_checkbox(number, 1-var.get()))
+        checkbutton3 = tk.Checkbutton(self.root, text="Use astronomical time", variable=astro, bg="white", onvalue = 1, offvalue = 0)
+        checkbutton3.grid(row=len(self.options)+n+3, column=3)
+        checkbutton3.bind("<Button-1>", lambda event, number='Astronomical', var=astro: self.update_checkbox(number, 1-var.get()))
+        checkbutton4 = tk.Checkbutton(self.root, text="Add markers to EDF", variable=marker, bg="white", onvalue = 1, offvalue = 0)
+        checkbutton4.grid(row=len(self.options)+n+4, column=3)
+        checkbutton4.bind("<Button-1>", lambda event, number='Marker', var=marker: self.update_checkbox(number, 1-var.get()))
         
         global output_text
         output_text = tk.Text(self.root, height = 15, width = 40, relief="solid", state="disabled")

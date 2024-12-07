@@ -2,16 +2,22 @@
 import re
 import os
 import pandas as pd
+import additional_metrics
 from pandas import DataFrame
 from datetime import datetime, timedelta
+#import datetime
 
-def sum_times(time1, time2):
-    time_list = [time1, time2]
-    total = timedelta()
-    for time_str in time_list:
-        h, m, s = map(int, time_str.split(':'))
-        total += timedelta(hours=h, minutes=m, seconds=s)
-    return re.findall(r'\d+:\d{2}:\d{2}', str(total))[0]
+def sum_times(time1, time2, minus = False):
+    h1, m1, s1 = map(int, time2.split(':'))
+    h2, m2, s2 = map(int, time1.split(':'))
+    if minus:
+        total = timedelta(hours=h2, minutes=m2, seconds=s2) - timedelta(hours=h1, minutes=m1, seconds=s1)
+    else:
+        total = timedelta(hours=h1, minutes=m1, seconds=s1) + timedelta(hours=h2, minutes=m2, seconds=s2)
+    result = re.findall(r'\d+:\d{2}:\d{2}', str(total))[0]
+    if result[1] == ':':
+        result = '0'+ result
+    return result
 
 def time_between(num1, bool1, num2, bool2, key):
     #print (num1, ':', bool1, ' ', num2, ':', bool2)
@@ -104,9 +110,13 @@ def find_sd (filename, output, start, key): #also returns SWDs for excel
             sd = float(x[2])
             count = 1
             cert = float(x[4])
-    df = DataFrame({'Start': [row[0][:8] for row in excel], 'End':[row[0][9:] for row in excel], 'SD': [float(row[2]) for row in excel], 'Cert': [int(row[4]) for row in excel]})
+    df = DataFrame({'Start': [row[0][:8] for row in excel], 'End':[row[0][9:] for row in excel], 'SD': [float(row[2]) for row in excel], 'Cert': [int(row[4]) for row in excel], 'Duration': [sum_times(row[0][9:], row[0][:8], minus = True) for row in excel]})
+    #df['Duration'] = (pd.to_datetime(df['End'], format = "%H:%M:%S") - pd.to_datetime(df['Start'], format = "%H:%M:%S")).astype(str).map(lambda x: x[7:])
+    if key['Astronomical']:
+        df['Start'] = (pd.to_datetime(df['Start'], format = "%H:%M:%S") + datetime.strptime(start, "%H:%M:%S")).astype(str).map(lambda x: x[7:])
+        df['End'] = (pd.to_datetime(df['End'], format = "%H:%M:%S") + datetime.strptime(start, "%H:%M:%S")).astype(str).map(lambda x: x[7:])                                                                     
     if count == 0: #in case of an empty file
-        result.append([0, 0, 0, 0, 0])
+        result.append([0, 0, 0, 0, 0, 0, 0])
     else:
         result.append([old_hour, count, round(sd/count, 3), round(cert/count, 1)])
         if old_hour != int(re.match(r'\d+', sum_times(start, x[0][9:17]))[0]): #raplce with actually checking if seconds overflow
@@ -121,7 +131,10 @@ def describe_csv (filename, output, key):
     times = re.findall(r'\d{2}:\d{2}:\d{2}', file)
 
     warning_filtered = ''
-    start = times[0]
+    if key['Astronomical']:
+        start = times[0]
+    else:
+        start = '00:00:00'
     filtered = [int(i) for i in (re.search(r'\d+VS\d+', file)[0].split('VS'))]
     #print(filtered)
     misc = DataFrame({'Filtered': filtered[0], 'Passed': filtered[1]}, index = [0])#, '% of filtered': round(int(filtered[0])/(int(filtered[0])+int(filtered[1]))*100, 3)})
@@ -161,8 +174,9 @@ def describe_csv (filename, output, key):
         #print (real_start_hour)
         real_end_hour = datetime.strptime(times[-1], "%H:%M:%S") - datetime.strptime(f'{times[-1][0]}{times[-1][1]}:{int(times[-1][3:5])//30*30}:00', "%H:%M:%S") #not safe
         #print (real_end_hour)
-        hourly_counts.iloc[0] = hourly_counts.iloc[0] * 1800 / real_start_hour.total_seconds()
-        hourly_counts.iloc[-1] = hourly_counts.iloc[-1] * 1800 / (1800-(real_end_hour.total_seconds()))
+        if real_start_hour.total_seconds():
+            hourly_counts.iloc[0] = hourly_counts.iloc[0] * 1800 / real_start_hour.total_seconds()
+            hourly_counts.iloc[-1] = hourly_counts.iloc[-1] * 1800 / (1800-(real_end_hour.total_seconds()))
         hours_bad = hourly_counts.axes[0].hour
         if len(hours_bad) < 2:
             hours = hours_bad
@@ -173,12 +187,22 @@ def describe_csv (filename, output, key):
                 half = 3 if start_at_half == 1 else 0
                 hours.append(f'{hour}:{half}0')
                 start_at_half *= -1
-    if info[0] == [0, 0, 0, 0, 0]:
-        df = DataFrame({'Hour': ['NO SWD'], 'SWD time': [0], 'SWD time percentage': [0], 'SWD amount': [0], "mean SD": [0], "mean CERT": [0]})
+    if info[0] == [0, 0, 0, 0, 0, 0, 0]: #TO BE REMOVED
+        df = DataFrame({'Hour': ['NO SWD'], 'SWD time': [0], 'SWD time percentage': [0], 'SWD amount': [0], "mean SD": [0], "mean CERT": [0], "mean SWD": [0], "Max SWD": [0]})
     else:
         #print('Hour', hours, '\nHours', [row[0] for row in info], '\nSWD time', list(hourly_time), '\nSWD time percentage', [round(elem, 2) for elem in list(hourly_counts.iloc)], '\nSWD amount', [row[1] for row in info], "\nmean SD", [row[2] for row in info], "\nmean CERT", [row[3] for row in info])
         #print('Hour', len(hours), '\nHours', len([row[0] for row in info]), '\nSWD time', len(list(hourly_time)), '\nSWD time percentage', len([round(elem, 2) for elem in list(hourly_counts.iloc)]), '\nSWD amount', len([row[1] for row in info]), "\nmean SD", len([row[2] for row in info]), "\nmean CERT", len([row[3] for row in info]))
         df = DataFrame({'Hour': hours, 'SWD time': list(hourly_time), 'SWD time percentage': [round(elem, 2) for elem in list(hourly_counts.iloc)], 'SWD amount': [row[1] for row in info], "mean SD": [row[2] for row in info], "mean CERT": [row[3] for row in info]})
+        ###TEST###
+
+        df['Mean SWD'] = df['SWD time'] / df['SWD amount']
+        df['Mean SWD'] = df['Mean SWD'].fillna(0)
+        df['Mean SWD'] = df['Mean SWD'].round(decimals=2)
+        time_priods = [list(row) for row in zip(*[swds['Start'].tolist(), swds['End'].tolist()])]
+        dict_periods = additional_metrics.check_periods(time_priods, len(df), start)
+        periods = list(dict_periods.values())
+        print (df['Hour'])
+        df['Max SWD'] = periods
     with pd.ExcelWriter(output[:-9] + warning_filtered + '.xlsx', engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='Properties', index=False)
         swds.to_excel(writer, sheet_name='SWDs')
@@ -199,4 +223,4 @@ def extract_stats (key):
 
 
 if __name__ == '__main__':
-    extract_stats({'Bins': 'half', 'Channel': 0})
+    extract_stats({'Bins': 'half', 'SR': 400, 'verbose': 3, 'Model': 'short', 'Channel': 0, 'Rename': 1, 'Sleep': 0,  'Astronomical': 0, 'Marker': 1})
