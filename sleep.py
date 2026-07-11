@@ -74,7 +74,7 @@ def magic2(a):
 ################
 # Параметры :::
 ################
-def find_sleep(edf_file, filt = True):
+def find_sleep(edf_file, channel filt = True):
     input_size=6 # Количество входных нейронов = число каналов * 2
 
     dt_average_s=1         # сдвиг окна усреднения в секундах
@@ -107,18 +107,18 @@ def find_sleep(edf_file, filt = True):
     use_corrected_data = False #True = будет использован сглаженный сигнал, где значения >0.2 и <-0.2 заменены на 0,2 и -0,2 соответсвенно
                             #а так же band-path фильтрация в диапазоне 0,5-100Hz
 
-
+    
     # 1 столбец время в секундах
     imported_data[:,0] = np.arange(0,f_len/freq,1/freq)
     # 2 столбец FrL = канал 1
-    imported_data[:,1] = np.array(f.readSignal(0))
+    imported_data[:,1] = np.array(f.readSignal(channel))
     # 3 столбец FrR = канал 2
-    imported_data[:,2] = np.array(f.readSignal(1))
+    #imported_data[:,2] = np.array(f.readSignal(1))
     # 4 столбец OcR = канал 3
-    imported_data[:,3] = np.array(f.readSignal(2))
+    #imported_data[:,3] = np.array(f.readSignal(2))
     # Файл в разметкой Насти и Максима. Если его нет, задать = None
     #file_markup = "Result_time_AW_BS.dat"
-    file_markup = None
+    #file_markup = None
 
 
     #if use_corrected_data:
@@ -184,23 +184,24 @@ def find_sleep(edf_file, filt = True):
             events = np.concatenate((events, event),0)
             intervals_s.append(cool_name(points[i]+sT0))
             intervals_e.append(cool_name(points[i+1]+sT0))
+            '''
             #print(freq, points[i])
             [S1, r1, S2, r2, S3, r3] = extract_stuff(imported_data[int(points[i]*freq):int(points[i+1]*freq)], freq)
-            
+
             SD1.append(S1)
             rt1.append(r1)
             SD2.append(S2)
             rt2.append(r2)
             SD3.append(S3)
             rt3.append(r3)
-
+            '''
     #with open('results/' + edf_file[4:] + '_intervals.txt', 'w') as file:
     #    for i in intervals:
     #        file.write(i)
     #        file.write('\n')
     #    file.close()
     #print(intervals)
-    df = DataFrame({'Start': intervals_s, 'End': intervals_e, 'Ch1 SD': SD1, 'Ch1 FR': rt1, 'Ch2 SD': SD2, 'Ch2 FR': rt2, 'Ch3 SD': SD3, 'Ch3 FR': rt3})
+    df = DataFrame({'Start': intervals_s, 'End': intervals_e})#, 'Ch1 SD': SD1, 'Ch1 FR': rt1, 'Ch2 SD': SD2, 'Ch2 FR': rt2, 'Ch3 SD': SD3, 'Ch3 FR': rt3})
     out_name = 'results/' + edf_file[4:] + '.xlsx'# + '_warning.txt'
     out_name_warn = 'results/' + edf_file[4:] + '_warning.xlsx'
     excel_mode = 'a'
@@ -226,6 +227,10 @@ def sleep_mark_everyone():
             files.append('EDF/' + file)
     print ("Found files: ", files)
 
+    for edf_file in files:
+        find_sleep(edf_file, channel)
+
+def sleep_mark_files(files):
     for edf_file in files:
         find_sleep(edf_file)
 

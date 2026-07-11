@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 import sys
 import SWD
 import threading
@@ -42,68 +42,81 @@ class TestReportGUI:
         self.root = root
         self.root.configure(bg="white")
         self.root.title("SWAN")
-        self.root.geometry("600x280")
+        self.root.geometry("1000x550")
         self.root.resizable(False, False)
-        self.options = [["Model", ['Default', 'Compact (experimental)']], ["Bins", ['30 mins', '1 hour']]]
+        self.options = [["Model", ['Default', 'Compact (experimental)', 'Physiobelt', 'Piter']], ["Bins", ['30 mins', '1 hour']]]
         self.numbers = ['SR', 'Channel']
         #self.options = [["No Data", "Passed", "Failed"]
-        self.dictopt = {'Bins': 'half', 'SR': 400, 'verbose': 3, 'Model': 'short', 'Channel': 0, 'Rename': 1, 'Sleep': 0, 'Astronomical': 0, 'Marker': 1}
-        self.create_widgets()
+        self.dictopt = {'Bins': 'half', 'SR': 0, 'verbose': 3, 'Model': 'short', 'Channel': 0, 'Rename': 1, 'Sleep': 0, 'Astronomical': 0, 'Marker': 0, 'Multi': 1, 'Files': []}
+        #self.create_widgets()
         
-    def create_widgets(self):
+    #def create_widgets(self):
+        eamount = 5 #amount of stuff added after original one
         #comboboxes for lists of options
         for i, option in enumerate(self.options):
             label = tk.Label(self.root, text=option[0], bg="white")
-            label.grid(row=i, column=2)
+            label.grid(row=i+eamount, column=2)
             var = tk.StringVar()
             combobox = ttk.Combobox(self.root, value=option[1], textvariable=var, state="readonly", width = 20)
             combobox.current(0)
             combobox.bind("<<ComboboxSelected>>", lambda event, option=option, var=var: self.update_options(option[0], var))
-            combobox.grid(row=i, column=3)
+            combobox.grid(row=i+eamount, column=3)
         #numbers input
         for n, number in enumerate(self.numbers):
             label = tk.Label(self.root, text=number, bg="white")#, relief="groove")
-            label.grid(row=len(self.options)+n, column=2)
+            label.grid(row=len(self.options)+n+eamount, column=2)
             vcmd = self.root.register(validate_entry)
             var2 = tk.StringVar()
             entry = tk.Entry(self.root, validate='key', validatecommand=(vcmd, '%P'), textvariable=var2, width = 23, relief="solid")
             entry.insert(0, self.dictopt[number])
             entry.bind("<FocusOut>", lambda event, number=number, var=var2: self.update_numbers(number, var))
-            entry.grid(row=len(self.options)+n, column=3)
-            #HERE BE DRAGONS entry.bind("<<ComboboxSelected>>", lambda event, option=option, var=var: self.update_options(option[0], var))
-
+            entry.grid(row=len(self.options)+n+eamount, column=3)
+            #HERE BE DRAGONS entry.bind("<<ComboboxSelected>>", lambda event, option=option, var=var: self.update_options(option[0], var))        rename = tk.IntVar()  
         rename = tk.IntVar()  
         sleep = tk.IntVar()
         astro = tk.IntVar()  
-        marker = tk.IntVar() 
+        marker = tk.IntVar()  
+        multi = tk.IntVar() 
         rename.set(1) 
+        multi.set(1) 
         checkbutton1 = tk.Checkbutton(self.root, text="Rename folder", variable=rename, bg="white", onvalue = 1, offvalue = 0)
-        checkbutton1.grid(row=len(self.options)+n+1, column=3)
+        checkbutton1.grid(row=len(self.options)+n+1+eamount, column=3)
         checkbutton1.bind("<Button-1>", lambda event, number='Rename', var=rename: self.update_checkbox(number, 1-var.get()))
-        checkbutton2 = tk.Checkbutton(self.root, text="Mark down sleep", variable=sleep, bg="white", onvalue = 1, offvalue = 0)
-        checkbutton2.grid(row=len(self.options)+n+2, column=3)
+        checkbutton2 = tk.Checkbutton(self.root, text="DISABLED", variable=sleep, bg="white", onvalue = 1, offvalue = 0)
+        checkbutton2.grid(row=len(self.options)+n+2+eamount, column=3)
         checkbutton2.bind("<Button-1>", lambda event, number='Sleep', var=sleep: self.update_checkbox(number, 1-var.get()))
         checkbutton3 = tk.Checkbutton(self.root, text="Use astronomical time", variable=astro, bg="white", onvalue = 1, offvalue = 0)
-        checkbutton3.grid(row=len(self.options)+n+3, column=3)
+        checkbutton3.grid(row=len(self.options)+n+3+eamount, column=3)
         checkbutton3.bind("<Button-1>", lambda event, number='Astronomical', var=astro: self.update_checkbox(number, 1-var.get()))
         checkbutton4 = tk.Checkbutton(self.root, text="Add markers to EDF", variable=marker, bg="white", onvalue = 1, offvalue = 0)
-        checkbutton4.grid(row=len(self.options)+n+4, column=3)
+        checkbutton4.grid(row=len(self.options)+n+4+eamount, column=3)
         checkbutton4.bind("<Button-1>", lambda event, number='Marker', var=marker: self.update_checkbox(number, 1-var.get()))
+        checkbutton5 = tk.Checkbutton(self.root, text="Multiprocessing", variable=multi, bg="white", onvalue = 1, offvalue = 0)
+        checkbutton5.grid(row=len(self.options)+n+5+eamount, column=3)
+        checkbutton5.bind("<Button-1>", lambda event, number='Multi', var=multi: self.update_checkbox(number, 1-var.get()))
         
         global output_text
-        output_text = tk.Text(self.root, height = 15, width = 40, relief="solid", state="disabled")
-        output_text.grid(row = 0, column = 1, rowspan = 7, padx=10, pady=10)
+        output_text = tk.Text(self.root, height = 20, width = 80, relief="solid", state="disabled")
+        output_text.grid(row = eamount, column = 1, rowspan = 10, padx=10, pady=10)
         #directing output here
         sys.stdout = CustomTextRedirector(output_text, "stdout")
         sys.stderr = CustomTextRedirector(output_text, "stderr")
 
         #button
         
-        button = tk.Button(self.root, text="START", command=lambda:butt_start(button, self.dictopt), height = 2)
-        button2 = tk.Button(self.root, text="ABOUT", command=lambda:print('DELETING WINDOWS\nPLEASE WAIT'), height = 2)
+        button = tk.Button(self.root, text="START", command=lambda:butt_start(button, self.dictopt), width = 7, height = 2)
+        button2 = tk.Button(self.root, text="ABOUT", command=lambda:print('DELETING WINDOWS\nPLEASE WAIT'), width = 7, height = 2)
         #button.bind("<
-        button.grid(row=len(self.options)+len(self.numbers), column = 2)
-        button2.grid(row=len(self.options)+len(self.numbers)+1, column = 2)
+        button.grid(row=1, column = 3) #len(self.options)+len(self.numbers)+eamount
+        button2.grid(row=3, column = 3)
+
+
+        self.listbox = tk.Listbox(self.root, width=105, height=7, relief="solid")
+        self.listbox.grid(row=1, column = 1,rowspan = 3, padx=10, pady=10)
+        button_select = tk.Button(self.root, text="SELECT\nFILES", command=self.select_files, width = 7, height = 2)
+        button_clear = tk.Button(self.root, text="CLEAR", command=self.clear_list, width = 7, height = 2)
+        button_select.grid(row=1, column = 2)
+        button_clear.grid(row=3, column = 2)
 
     def update_checkbox(self, number, x):
         if x != '':
@@ -112,7 +125,7 @@ class TestReportGUI:
 
     def update_options(self, option, var):
         # Update the archive dictionary with the selected option
-        key = {'1 hour': 'hour', '30 mins': 'half', 'Short': 'short', 'Compact (experimental)': 'compact'}
+        key = {'1 hour': 'hour', '30 mins': 'half', 'Physiobelt': 'physio', 'Default': 'short', 'Compact (experimental)': 'compact', 'Piter': 'piter'}
         x = var.get()
         if x in key:
             x = key[x]
@@ -129,10 +142,23 @@ class TestReportGUI:
         output_text.insert(tk.END, message + "\n")
         output_text.see(tk.END)
 
+    def select_files(self):
+        files = filedialog.askopenfilenames(
+            filetypes=[("European Data Format", "*.edf")])
+        #self.listbox.delete(0, tk.END)
+        for file in files:
+            self.listbox.insert(tk.END, file)
+        self.dictopt['Files'].extend(files)
+
+    def clear_list(self):
+        self.listbox.delete(0, tk.END)
+        self.dictopt['Files'] = []
+
 
 def run_gui():
     root = tk.Tk()
     gui = TestReportGUI(root)
     root.mainloop()
 
-run_gui()
+if __name__ == '__main__':
+    run_gui()

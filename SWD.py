@@ -1,4 +1,8 @@
-#version 0.01
+##############################################
+# This file is used for general purpose launch
+# of the SWAN stuff; practically what happens
+# after you hit START button - it's all there
+##############################################
 
 import ann
 import MESD
@@ -43,14 +47,16 @@ def launch(key):
             except Exception as e:
                 print(f"Statistical data and Excel file formation failed: {e}")
                 return 0
+    ''' REMOVED UNTIL SARATOV SENDS THEIR REGARDS
     if key['Sleep']:
         import sleep
         print('Moving to sleep markdown...')
-        sleep.sleep_mark_everyone()
+        sleep.sleep_mark_files(key['Files'])
+    '''
     if key['Marker']:
         import add_markers
         print('Moving to EDF markers...')
-        add_markers.mark_files()
+        add_markers.mark_files(key['Files'])
         
     if key['Rename']:            
         rename_folder_to_unique(os.getcwd() + '/results/', "result")
