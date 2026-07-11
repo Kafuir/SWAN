@@ -85,12 +85,17 @@ def calculate_duration(start_time, end_time):
     end_time = int(end_time[0]) * 3600 + int(end_time[1]) * 60 + int(end_time[2])
     return dt.timedelta(seconds = end_time - start_time)
 
-def check_periods(time_periods, record_len, delta): #TODO: check for per hour basis
+def check_periods(time_periods, record_len, delta, key): #TODO: check for per hour basis
     grouped_by_half_hour = {}
     for tp in time_periods:
         start_time, end_time = parse_time_period(tp, delta)
-        print(start_time)
-        start_half_hour = start_time[0] * 2 + (start_time[1] // 30)  # Convert hour and minute to half-hour index
+        #print(start_time)
+        if key['Bins'] == 'hour':
+            start_half_hour = start_time[0]  # Convert hour and minute to half-hour index
+        if key['Bins'] == 'half':
+            start_half_hour = start_time[0] * 2 + (start_time[1] // 30)  # Convert hour and minute to half-hour index
+        if key['Bins'] == 'quarter':
+            start_half_hour = start_time[0] * 4 + (start_time[1] // 15)  # Convert hour and minute to half-hour index
         if start_half_hour not in grouped_by_half_hour:
             grouped_by_half_hour[start_half_hour] = []
         grouped_by_half_hour[start_half_hour].append((start_time, end_time))
@@ -107,7 +112,7 @@ def check_periods(time_periods, record_len, delta): #TODO: check for per hour ba
             if duration > max_duration:
                 max_duration = duration
         longest_durations[fancy(half_hour)] = str(max_duration)
-    print(longest_durations.keys())
+    #print(longest_durations.keys())
     return longest_durations
 
 

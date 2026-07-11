@@ -2,6 +2,7 @@ import pyedflib
 import numpy as np
 import os
 import pandas as pd
+from pathlib import Path
 from datetime import datetime
   
 def time_to_seconds(time_str):
@@ -23,19 +24,28 @@ def get_marks(ex):
 
 # Define markers
 
-def mark_files():
-    files = []
-    for file in os.listdir("results/"):
-        if file.endswith(".xlsx"):
-            files.append('results/' + file)
-    print ("Found files: ", files)
-
-    for xl_file in files:
-        edf_file = xl_file.replace('_warning', '')[:-4].replace('results/', 'EDF/') + 'edf'
+def mark_files(edfs = []):
+    xls = []
+    if edfs == []:
+        for file in os.listdir("results/"):
+            if file.endswith(".xlsx"):
+                xls.append('results/' + file)
+                edfs.append(xl_file.replace('_warning', '')[:-4].replace('results/', 'EDF/') + 'edf')
+    else:
+        for file in edfs:
+            filename = os.path.splitext(os.path.basename(file))[0] + ".xlsx"
+            filename = os.path.join(os.getcwd(), "results", filename)
+            if not Path(filename).is_file():
+                filename = filename[:-5] + '_warning.xlsx'
+            xls.append(filename)
+            #else:
+            #    xls.append(os.path.join(os.getcwd(), "results", filename))
+    print ("Found files: ", edfs)
+    for xl_file, edf_file in zip(xls, edfs):
         print (edf_file)
         mark(edf_file, get_marks(xl_file))
 
 
 # Specify the output file path
 if __name__ == '__main__':
-    mark_files()
+    mark_files([])

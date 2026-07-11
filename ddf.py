@@ -44,7 +44,7 @@ class TestReportGUI:
         self.root.title("SWAN")
         self.root.geometry("1000x550")
         self.root.resizable(False, False)
-        self.options = [["Model", ['Default', 'Compact (experimental)', 'Physiobelt', 'Piter']], ["Bins", ['30 mins', '1 hour']]]
+        self.options = [["Model", ['Default', 'Compact (experimental)', 'Physiobelt']], ["Bins", ['30 mins', '1 hour']]]
         self.numbers = ['SR', 'Channel']
         #self.options = [["No Data", "Passed", "Failed"]
         self.dictopt = {'Bins': 'half', 'SR': 0, 'verbose': 3, 'Model': 'short', 'Channel': 0, 'Rename': 1, 'Sleep': 0, 'Astronomical': 0, 'Marker': 0, 'Multi': 1, 'Files': []}

@@ -19,7 +19,7 @@ def round_time(moment):
     return str(tim[0]+':'+tim[1])
 
 def read_times(file):
-    dick = {}
+    di = {}
     with open(file, 'r') as file:
     # Iterate over each line in the file
         for line in file:
@@ -28,8 +28,8 @@ def read_times(file):
             #print (value2)
             
             # Add the key-value pair to the dictionary
-            dick[key] = [value1, value2, value3]
-    return dick
+            di[key] = [value1, value2, value3]
+    return di
 
 def fh(num):
     num = str(num%24)
