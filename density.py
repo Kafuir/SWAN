@@ -68,9 +68,21 @@ def histogram(total_duration, values, durations_base, writer):
     worksheet.add_chart(chart, "E2")
     #worksheet.to_excel(writer, sheet_name=sheet_name, index = False)
 
+def time_to_times(time):
+    #print(time)
+    time = str(time).split(':')
+    #print(time)
+    if len(time) == 1:
+        return int(time[0]), 0, 0
+    if len(time) == 2:
+        return int(time[0]), int(time[1]), 0
+    if len(time) == 3:
+        return int(time[0]), int(time[1]), int(time[2])
+
 def sum_times(time1, time2, minus = False):
-    h1, m1, s1 = map(int, time2.split(':'))
-    h2, m2, s2 = map(int, time1.split(':'))
+    #print(time1, time2)
+    h1, m1, s1 = time_to_times(time2)
+    h2, m2, s2 = time_to_times(time1)
     if minus:
         total = timedelta(hours=h2, minutes=m2, seconds=s2) - timedelta(hours=h1, minutes=m1, seconds=s1)
     else:
@@ -81,7 +93,6 @@ def sum_times(time1, time2, minus = False):
     return result
 
 def time_between_old(num1, bool1, num2, bool2, key):
-    #print (num1, ':', bool1, ' ', num2, ':', bool2)
     if num2 < num1:
         num2 += 24 #to account for possible midnight holes
     # Initialize an empty list to store our pairs
@@ -98,7 +109,6 @@ def time_between_old(num1, bool1, num2, bool2, key):
     return pairs
 
 def time_between(start_hour, start_minute, end_hour, end_minute, key):
-    #print(start_hour, start_minute, end_hour, end_minute)
     output = []
     start_hour = 23 if start_hour == -1 else start_hour #to check if it's "just before recording
     start_time = datetime(1900, 1, start_hour//24+1, start_hour%24, start_minute)
@@ -131,7 +141,7 @@ def time_between(start_hour, start_minute, end_hour, end_minute, key):
 
 def parse_timestamp_pairs(pairs, day_long, start_time="00:00:00", end_time="23:59:59"):
     # Define the overall time range
-    start_datetime = datetime.strptime(start_time, "%H:%M:%S") #СДЕЛАЙ ПРОВЕРКУ ЧТО ЭТО ТОТ ЖЕ ИЛИ РАЗНЫЕ ДНИ!!
+    start_datetime = datetime.strptime(start_time, "%H:%M:%S") #MAKE A CHECK ITS SAME OR DIFFERENT DAYS!!
     end_datetime = datetime.strptime(end_time, "%H:%M:%S")
     #print(end_time, start_time)
 
@@ -343,10 +353,8 @@ def describe_csv (filename, output, key):
     else:
         #('Hour', hours, '\nHours', [row[0] for row in info], '\nSWD time', list(hourly_time), '\nSWD time percentage', [round(elem, 2) for elem in list(hourly_counts.iloc)], '\nSWD amount', [row[1] for row in info], "\nmean SD", [row[2] for row in info], "\nmean CERT", [row[3] for row in info])
         #print('Hour', len(hours), '\nHours', len([row[0] for row in info]), '\nSWD time', len(list(hourly_time)), '\nSWD time percentage', len([round(elem, 2) for elem in list(hourly_counts.iloc)]), '\nSWD amount', len([row[1] for row in info]), "\nmean SD", len([row[2] for row in info]), "\nmean CERT", len([row[3] for row in info]))
-        #print(info)
-        #print(hours)
-        #print(len(hours), len(hourly_time), len(info))
-        df = DataFrame({'Hour': hours, 'SWD time': list(hourly_time), 'SWD time percentage': [round(elem, 2) for elem in list(hourly_counts.iloc)], 'SWD amount': [row[1] for row in info], "mean SD": [row[2] for row in info], "mean CERT": [row[3] for row in info]})
+        times_2 = [sum_times(a, times[0]) for a in hours]
+        df = DataFrame({'Time': times_2, 'Hour': hours, 'SWD time': list(hourly_time), 'SWD time percentage': [round(elem, 2) for elem in list(hourly_counts.iloc)], 'SWD amount': [row[1] for row in info], "mean SD": [row[2] for row in info], "mean CERT": [row[3] for row in info]})
         ###TEST###
 
         df['Mean SWD'] = df['SWD time'] / df['SWD amount']
@@ -375,9 +383,7 @@ def extract_stats (key):
     #    os.makedirs(os.getcwd() + '/results/CSV/')
     for filename in os.listdir(os.getcwd() + '/results/MESD/'):
         if '.txt' in filename:
-            describe_csv(os.getcwd() + '/results/MESD/' + filename, os.getcwd() + '/results/' + filename, key) #not CSV
-            #os.remove(os.getcwd() + '/results/MESD/' + filename)
-    #os.rmdir(os.getcwd() + '/results/MESD/')
+            describe_csv(os.getcwd() + '/results/MESD/' + filename, key['Folder'] + '/' + filename, key) #not CSV
     return 0
 
 

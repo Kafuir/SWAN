@@ -7,6 +7,7 @@
 import ann
 import MESD
 import density
+import csv_creator
 import os
 
 #Bin - using hours or half-hours for excel file index
@@ -41,22 +42,33 @@ def launch(key):
             return 0
         if failure == 0:
             try:
-                failure = density.extract_stats(key)  
-                if failure == 0:            
+                failure_xls, failure_csv = 0, 0
+                if key['Output'] == 'xls' or key['Output'] == 'csvxls':
+                    failure_xls = density.extract_stats(key)
+                if key['Output'] == 'csv' or key['Output'] == 'csvxls':
+                    failure_csv = csv_creator.create_csvs(key)  
+                if failure_xls == 0 and failure_csv == 0:            
                     print('All steps passed succesfully!\n')
             except Exception as e:
-                print(f"Statistical data and Excel file formation failed: {e}")
-                return 0
+                print(f"Statistical data and Excel/CSV file formation failed: {e}")
+
+            #Removing directory with MESD stuff
+        for root, dirs, files in os.walk(os.getcwd()+'/results/MESD'):
+            for file in files:
+                print(file)
+                if "_MESD" in file:
+                    file_path = os.path.join(root, file)
+                    os.remove(file_path)
     ''' REMOVED UNTIL SARATOV SENDS THEIR REGARDS
     if key['Sleep']:
         import sleep
         print('Moving to sleep markdown...')
         sleep.sleep_mark_files(key['Files'])
     '''
-    if key['Marker']:
+    if key['Markdown'] != 'None':
         import add_markers
         print('Moving to EDF markers...')
-        add_markers.mark_files(key['Files'])
+        add_markers.mark_files(key['Files'], key['Markdown'], key['Folder'])
         
     if key['Rename']:            
         rename_folder_to_unique(os.getcwd() + '/results/', "result")
@@ -65,7 +77,7 @@ def launch(key):
     return 0
 
 if __name__ == '__main__':
-    key = {'Bins': 'half', 'SR': 400, 'verbose': 3, 'Model': 'short', 'Channel': 0, 'Rename': 1, 'Sleep': 0,  'Astronomical': 0, 'Marker': 1}
+    key = {'Bins': 'half', 'SR': 400, 'verbose': 3, 'Model': 'short', 'Channel': 0, 'Rename': 1, 'Sleep': 0,  'Astronomical': 0, 'Markdown': 0}
     SR = input ('The program will attempt to parse all files in EDF folder. Enter Sampling Rate (or press enter to use 400)\n')
     if SR != '':
         key['SR'] = SR

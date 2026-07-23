@@ -1,5 +1,6 @@
 import os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import matplotlib.pyplot as plt
 import matplotlib.image as img
 import tensorflow as tf
@@ -88,6 +89,7 @@ def predict_spectrogram(image_chunk, model, vmax):
             predictions.append(model.predict(input_arr, verbose = 0))
         except Exception as e:
             if "Graph execution error" in str(e):
+                a = 0 #pass
                 print("Cutting... size: ", input_arr.shape)
 
             else:
@@ -174,7 +176,7 @@ def swd(key):
         
         seconds = int(len(processed_signal)/SR)
         EOF = cool_name(seconds) ##version03\
-        processes = os.cpu_count() if key['Multi'] else 1
+        processes = os.cpu_count() // 2 if key['Multi'] else 1
         preproc_chunks = create_image_chunks(seconds, processes, list(image_chunks))
         print(f'Using {len(preproc_chunks)} processes...')
         with Manager() as manager:
